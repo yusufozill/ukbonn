@@ -9,9 +9,8 @@ COPY main.py .
 COPY requirements.txt .
 
 
-
 # dependencies
-RUN pip install numpy
+RUN pip install numpy 
 
 # run
 CMD ["python", "main.py"] 
