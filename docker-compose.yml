@@ -1,8 +1,42 @@
-version: '3.4'
-
 services:
-  ukbonn:
-    image: ukbonn
-    build:
-      context: .
-      dockerfile: ./Dockerfile
+  mysql:
+    #image: ukbonn-database:latest
+    build: ./codes/database
+  
+    environment:
+      MYSQL_ROOT_PASSWORD: Password
+      MYSQL_DATABASE: wordsdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  api:
+    build: ./codes/server
+    
+    #image: ukbonn-server:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+    
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Password
+      MYSQL_DATABASE: wordsdb
+    restart: always
+
+  website:
+    #image: ukbonn-web:latest
+    build: ./codes/website
+    
+    container_name: website
+ 
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: always
+volumes:
+  db_data:

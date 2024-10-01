@@ -1,0 +1,15 @@
+{
+    "name": "word-api",
+    "version": "1.0.0",
+    "description": "MySQL ile basit bir kelime API'si",
+    "main": "index.js",
+    "scripts": {
+      "start": "node index.js"
+    },
+    "dependencies": {
+      "express": "^4.17.1",
+      "mysql2": "^3.11.3",
+      "cors": "^2.8.5"  
+    }
+  }
+  
