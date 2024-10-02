@@ -10,6 +10,9 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./codes/database/init.sql:/docker-entrypoint-initdb.d/init.sql  # SQL betiğini ekleyin
+    networks:
+      - ukbonn-default
 
   api:
     build: ./codes/server
@@ -19,13 +22,16 @@ services:
       - "3000:3000"
     depends_on:
       - mysql
+    restart: always
     
     environment:
       MYSQL_HOST: mysql
       MYSQL_USER: root
       MYSQL_PASSWORD: Password
       MYSQL_DATABASE: wordsdb
-    restart: always
+    networks:
+      - ukbonn-default
+    
 
   website:
     #image: ukbonn-web:latest
@@ -38,5 +44,10 @@ services:
     depends_on:
       - api
     restart: always
+    networks:
+      - ukbonn-default
+networks:
+  ukbonn-default:
+    driver: bridge
 volumes:
   db_data:

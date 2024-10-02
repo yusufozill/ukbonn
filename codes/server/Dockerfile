@@ -1,20 +1,15 @@
-# Node.js image'ını kullan
-FROM node:16
+# Dockerfile
+FROM python:3.9
 
-# Çalışma dizinini oluştur ve belirle
-WORKDIR /usr/src/app
+# Çalışma dizini oluştur
+WORKDIR /app
 
-# package.json ve package-lock.json dosyalarını kopyala
-COPY package*.json ./
+# Gereksinimleri kopyala ve yükle
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Gerekli bağımlılıkları yükle
-RUN npm install
-
-# Proje dosyalarını kopyala
+# Uygulama kodunu kopyala
 COPY . .
 
-# Sunucuyu başlatmak için komut
-CMD [ "node", "index.js" ]
-
-# Uygulama için dinlenecek port
-EXPOSE 3000
+# Uvicorn ile uygulamayı çalıştır
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "3000"]
