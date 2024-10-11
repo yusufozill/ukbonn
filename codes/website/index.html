@@ -3,23 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kelime Yönetimi-1</title>
-    <link rel="stylesheet" href="style.css">
+    <title>ChatGPT-Style Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #fff;
+            overflow-y: auto;
+        }
+
+        .message-row {
+            display: flex;
+            justify-content: space-between;
+            flex-direction: column;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .prompt {
+            text-align: right;
+            margin-bottom: 5px;
+            background-color: #d4f0f7;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .sentence {
+            text-align: left;
+            background-color: #d4eed8;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        #form-container {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-top: 1px solid #ccc;
+            background-color: #f9f9f9;
+        }
+
+        #form-container input {
+            padding: 10px;
+            width: 80%;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #form-container button {
+            padding: 10px;
+            border: none;
+            background-color: #5cb85c;
+            color: white;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #form-container button:hover {
+            background-color: #4cae4c;
+        }
+    </style>
 </head>
 <body>
-    <h1>word-list</h1>
-    
-    <div>
-        <label for="word">Kelime Ekle -2 :</label>
-        <input type="text" id="word" placeholder="Kelime girin">
-        <button onclick="addWord()">Ekle</button>
-    </div>
-    
-    <h2>Son 10 Kelime</h2>
-    <ul id="word-list">
-        <!-- Kelimeler buraya yüklenecek -->
-    </ul>
-    
-    <script src="script.js"></script>
+
+<h1>ChatGPT-Style Movements Tracker</h1>
+
+<div id="chat-container"></div>
+
+<div id="form-container">
+    <input type="text" id="prompt" placeholder="Enter prompt..." required>
+    <input type="text" id="sentence" placeholder="Enter sentence..." required>
+    <button type="submit" id="send-btn">Send</button>
+</div>
+
+<script>
+    const apiUrl = "http://localhost:3000/movements";
+
+    // Listeyi güncelleme fonksiyonu
+    async function getMovements() {
+        const response = await fetch(apiUrl);
+        const movements = await response.json();
+
+        const chatContainer = document.getElementById("chat-container");
+        chatContainer.innerHTML = "";
+
+        movements.forEach(movement => {
+            const messageRow = document.createElement("div");
+            messageRow.classList.add("message-row");
+
+            const promptDiv = document.createElement("div");
+            promptDiv.classList.add("prompt");
+            promptDiv.textContent = movement.prompt;
+
+            const sentenceDiv = document.createElement("div");
+            sentenceDiv.classList.add("sentence");
+            sentenceDiv.textContent = movement.sentence;
+
+            messageRow.appendChild(promptDiv);
+            messageRow.appendChild(sentenceDiv);
+
+            chatContainer.appendChild(messageRow);
+        });
+        chatContainer.scrollTop = chatContainer.scrollHeight;  // Scroll en aşağıya
+    }
+
+    // Hareket ekleme fonksiyonu
+    async function addMovement(prompt, sentence) {
+        const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ prompt, sentence })
+        });
+
+        if (response.ok) {
+            getMovements();  // Listeyi güncelle
+        }
+    }
+
+    // Form submit olayı
+    document.getElementById("send-btn").addEventListener("click", async function() {
+        const prompt = document.getElementById("prompt").value;
+        const sentence = document.getElementById("sentence").value;
+
+        if (prompt && sentence) {
+            await addMovement(prompt, sentence);
+
+            // Formu temizle
+            document.getElementById("prompt").value = "";
+            document.getElementById("sentence").value = "";
+        }
+    });
+
+    // Sayfa yüklendiğinde hareketleri getir
+    getMovements();
+</script>
+
 </body>
 </html>

@@ -1,8 +1,7 @@
 services:
   mysql:
     #image: ukbonn-database:latest
-    build: ./codes/database
-  
+    build: ./codes/database # Dockerfile image
     environment:
       MYSQL_ROOT_PASSWORD: Password
       MYSQL_DATABASE: wordsdb
@@ -13,10 +12,8 @@ services:
       - ./codes/database/init.sql:/docker-entrypoint-initdb.d/init.sql  # SQL betiğini ekleyin
     networks:
       - ukbonn-default
-
   api:
     build: ./codes/server
-    
     #image: ukbonn-server:latest
     ports:
       - "3000:3000"
@@ -31,8 +28,6 @@ services:
       MYSQL_DATABASE: wordsdb
     networks:
       - ukbonn-default
-    
-
   website:
     #image: ukbonn-web:latest
     build: ./codes/website
@@ -40,10 +35,33 @@ services:
     container_name: website
  
     ports:
-      - "8080:80"
+      - "8080:8080"
     depends_on:
       - api
     restart: always
+    networks:
+      - ukbonn-default
+  ollama:
+    #image: ukbonn-web:latest
+    build: ./codes/ollama
+    container_name: ollama
+    volumes:
+      - ollama-models:/app/models 
+    ports:
+      - "11434:11434"  # Port yönlendirmesi
+    environment:
+      - OLLAMA_HOST=0.0.0.0  # Gerekli ortam değişkenleri
+      - LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - NVIDIA_VISIBLE_DEVICES=all
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]  # GPU'yu belirtir
+    depends_on:
+      - api
     networks:
       - ukbonn-default
 networks:
@@ -51,3 +69,4 @@ networks:
     driver: bridge
 volumes:
   db_data:
+  ollama-models:

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #wordDetails {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Word Details</h1>
+
+<div id="wordDetails">Loading...</div>
+
+<script>
+    const API_URL = "http://localhost:3000/words"; // API base URL
+
+    // Get the word from the URL (e.g., /words/example)
+    const word = window.location.pathname.split('/')[2]; // Extract word from URL
+
+    // Fetch word details from the API
+    async function fetchWordDetails(word) {
+        try {
+            const response = await fetch(`${API_URL}/${word}`);
+            const data = await response.json();
+
+            const wordDetailsDiv = document.getElementById('wordDetails');
+
+            if (response.ok) {
+                wordDetailsDiv.innerHTML = `
+                    <p><strong>Word (EN):</strong> ${data}</p>
+                `;
+            } else {
+                wordDetailsDiv.innerHTML = `<p class="error">Error: ${data.error}</p>`;
+            }
+        } catch (error) {
+            console.error('Error fetching word details:', error);
+            document.getElementById('wordDetails').innerHTML = '<p class="error">Failed to fetch word details</p>';
+        }
+    }
+
+    // Call the function to fetch and display word details
+    fetchWordDetails(word);
+</script>
+
+</body>
+</html>
