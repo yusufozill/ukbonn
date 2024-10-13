@@ -1,14 +1,11 @@
-
 FROM ollama/ollama
 
-# Portu aç
+WORKDIR /app/models
+
 EXPOSE 11434
 
-
-# Script'i çalıştır
-
-
 CMD ["serve"]
+
 
 # fetch('http://localhost:11434/api/chat', {
 #   method: 'POST',

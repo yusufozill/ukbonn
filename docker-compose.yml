@@ -47,6 +47,8 @@ services:
     container_name: ollama
     volumes:
       - ollama-models:/app/models 
+      - ./models:/app/models 
+      
     ports:
       - "11434:11434"  # Port yönlendirmesi
     environment:

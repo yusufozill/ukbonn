@@ -5,4 +5,4 @@ databases[mysql]
 pydantic
 cryptography
 requests
-
+asyncio

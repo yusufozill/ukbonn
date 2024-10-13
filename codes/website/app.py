@@ -1,10 +1,12 @@
 from flask import Flask, send_file
+from flask_cors import CORS  # CORS modülünü ekleyin
 
 app = Flask(__name__)
-
+# Tüm rotalar için CORS'u etkinleştirir
 @app.route('/')
 def hello():
     return send_file('index.html')
+
 @app.route('/words/<path:word_page>')
 def serve_word_page(word_page):
     try:
