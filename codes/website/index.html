@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -76,11 +77,16 @@
             border-radius: 5px;
         }
 
-        #form-container button:hover {
+        #form-container button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #form-container button:hover:enabled {
             background-color: #4cae4c;
         }
 
-        /* --- Yükleniyor animasyonu ekleme --- */
+        /* Yükleniyor animasyonu */
         #loading {
             display: none;
             text-align: center;
@@ -90,7 +96,7 @@
 
         .spinner {
             margin: 0 auto;
-            border: 4px solid rgba(0,0,0,0.1);
+            border: 4px solid rgba(0, 0, 0, 0.1);
             border-left-color: #5cb85c;
             border-radius: 50%;
             width: 24px;
@@ -105,81 +111,122 @@
         }
     </style>
 </head>
+
 <body>
 
-<h1>ChatGPT-Style Movements Tracker</h1>
+    <h1>ChatGPT-Style Movements Tracker</h1>
 
-<div id="chat-container"></div>
+    <div id="chat-container"></div>
 
-<!-- Yükleniyor animasyonu -->
-<div id="loading">
-    <div class="spinner"></div>
-    <p>Yükleniyor...</p>
-</div>
+    <div id="form-container">
+        <input type="text" id="prompt" placeholder="Enter prompt..." required>
+        <button type="submit" id="send-btn">Send</button>
 
-<div id="form-container">
-    <input type="text" id="prompt" placeholder="Enter prompt..." required>
-    <button type="submit" id="send-btn">Send</button>
-</div>
+    </div>
 
-<script>
-    const apiUrl = "http://localhost:3000/movements";
-
-    // Listeyi güncelleme fonksiyonu
-    async function getMovements() {
-        const response = await fetch(apiUrl);
-        const movements = await response.json();
-
+    <script>
+        const apiUrl = "http://localhost:3000/movements";
         const chatContainer = document.getElementById("chat-container");
-        chatContainer.innerHTML = "";
+        const sendButton = document.getElementById("send-btn");
+        const loadingElement = document.getElementById('loading');
+        const promptInput = document.getElementById("prompt");
 
-        movements.forEach(movement => {
-            const messageRow = document.createElement("div");
-            messageRow.classList.add("message-row");
+        async function getMovements() {
+            const response = await fetch(apiUrl);
+            const movements = await response.json();
 
-            const promptDiv = document.createElement("div");
-            promptDiv.classList.add("prompt");
-            promptDiv.textContent = movement.prompt;
+            chatContainer.innerHTML = "";
 
-            const sentenceDiv = document.createElement("div");
-            sentenceDiv.classList.add("sentence");
-            sentenceDiv.textContent = movement.sentence;
+            movements.forEach(movement => {
+                const messageRow = document.createElement("div");
+                messageRow.classList.add("message-row");
 
-            messageRow.appendChild(promptDiv);
-            messageRow.appendChild(sentenceDiv);
+                const promptDiv = document.createElement("div");
+                promptDiv.classList.add("prompt");
+                promptDiv.textContent = movement.prompt;
 
-            chatContainer.appendChild(messageRow);
-        });
-        chatContainer.scrollTop = chatContainer.scrollHeight;  // Scroll en aşağıya
-    }
+                const sentenceDiv = document.createElement("div");
+                sentenceDiv.classList.add("sentence");
+                sentenceDiv.textContent = movement.sentence;
 
-    // --- Yeni fonksiyon: API çağrısı yapan ve yanıtı ekrana yazdıran --- 
-    async function sendPrompt(PROMPT) {
-        const loadingElement = document.getElementById('loading'); // Yükleniyor animasyonunu göstermek için
-        loadingElement.style.display = 'block'; // Animasyonu göster
+                messageRow.appendChild(promptDiv);
+                messageRow.appendChild(sentenceDiv);
 
-        try {
-            const response = await fetch('http://localhost:11434/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: "llama3.2",
-                    messages: [
-                        {
-                            role: "user",
-                            content: PROMPT
-                        }
-                    ],
-                    stream: false
-                })
+                chatContainer.appendChild(messageRow);
             });
-            
-            const data = await response.json();
-            const messageContent = data.message.content; // message.content altındaki metni al
+            chatContainer.scrollTop = chatContainer.scrollHeight; 
+        }
 
-            // Chat alanına yeni mesajı ekleme
+        async function sendPrompt(prompt) {
+            loading(prompt);
+
+            try {
+                const response = await fetch('http://localhost:11434/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: "llama3.2",
+                        messages: [
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ],
+                        stream: false
+                    })
+                });
+                const data = await response.json();
+                const messageContent = data.message.content;
+                console.log("messageContent: ", messageContent);
+                
+                await sendMovement(prompt, messageContent); 
+                await getMovements();
+                refresh();
+            } catch (error) {
+                console.error('Error:', error);
+                sentenceDiv.textContent = "Hata oluştu.";
+            } finally {
+                loadingElement.style.display = 'none'; 
+                sendButton.disabled = false;
+                sendButton.style.backgroundColor = '#5cb85c'; 
+            }
+        }
+
+        async function sendMovement(prompt, sentence) {
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        sentence: sentence
+                    })
+                });
+
+                if (!response.ok) {
+                    console.error('Failed to add movement');
+                }
+            } catch (error) {
+                console.error('Error adding movement:', error);
+            }
+        }
+
+        document.getElementById("send-btn").addEventListener("click", async function () {
+            const prompt = promptInput.value.trim();
+            if (prompt) {
+                await sendPrompt(prompt);
+                promptInput.value = ""; 
+            }
+        });
+        function loading(PROMPT) {
+            sendButton.disabled = true;
+            sendButton.style.backgroundColor = '#ccc'; 
+            loadingElement.style.display = 'block'; 
+
             const messageRow = document.createElement("div");
             messageRow.classList.add("message-row");
 
@@ -189,40 +236,23 @@
 
             const sentenceDiv = document.createElement("div");
             sentenceDiv.classList.add("sentence");
-            sentenceDiv.textContent = messageContent;
+            sentenceDiv.innerHTML = '<div class="spinner"></div> Yükleniyor...';
 
             messageRow.appendChild(promptDiv);
             messageRow.appendChild(sentenceDiv);
-
-            const chatContainer = document.getElementById("chat-container");
             chatContainer.appendChild(messageRow);
-
-            chatContainer.scrollTop = chatContainer.scrollHeight; // Chat'i en aşağıya kaydır
-        } catch (error) {
-            console.error('Error:', error);
-        } finally {
-            loadingElement.style.display = 'none'; // Animasyonu gizle
+            chatContainer.scrollTop = chatContainer.scrollHeight; 
+        }
+        // Refresh button fonksiyonu (isteğe göre ekleyebilirsiniz)
+        function refresh() {
+            sendButton.disabled = false;
+            sendButton.style.backgroundColor = '#5cb85c'; 
+            promptInput.value = ""; 
         }
 
-            // Form submit olayı
-        document.getElementById("send-btn").addEventListener("click", async function() {
-            const prompt = document.getElementById("prompt").value;
-            const sentence = document.getElementById("sentence").value;
-
-            if (prompt && sentence) {
-                await addMovement(prompt, sentence);
-
-                // Formu temizle
-                document.getElementById("prompt").value = "";
-                document.getElementById("sentence").value = "";
-            }
-        });
-    }
-
-
-    // Sayfa yüklendiğinde hareketleri getir
-    getMovements();
-</script>
+        getMovements();
+    </script>
 
 </body>
+
 </html>
