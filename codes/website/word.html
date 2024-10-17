@@ -3,65 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Word Details</title>
+    <title>Soru Sor</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif; /* Font değiştirilebilir */
+            background-color: #f0f0f0;
         }
 
-        h1 {
+        #question-area {
+            margin-bottom: 20px;
             text-align: center;
         }
 
-        #wordDetails {
-            margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ccc;
+        h1 {
+            font-size: 36px; /* Soru boyutu */
+            font-family: 'Courier New', Courier, monospace; /* Daktilo yazı tipi */
+            color: black;
         }
 
-        .error {
-            color: red;
+        .button {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: black;
+            border: 1px solid black;
+            border-radius: 20px; /* Oval köşeler */
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: rgba(0, 123, 255, 0.3);
+        }
+
+        #output {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        .animated {
+            display: inline-block;
+            overflow: hidden; 
+            white-space: nowrap; 
+            border-right: 2px solid black; 
+            animation: typing 1s steps(30, end) forwards;
         }
     </style>
 </head>
 <body>
+    <h1 id="question-title"></h1>
+    
+    <div id="question-area"></div>
+    <div id="output"></div>
 
-<h1>Word Details</h1>
+    <script>
+        function sor(soru, siklar) {
+            const questionArea = document.getElementById('question-area');
+            questionArea.innerHTML = ''; // Önceki şıkları sıfırla
 
-<div id="wordDetails">Loading...</div>
-
-<script>
-    const API_URL = "http://localhost:3000/words"; // API base URL
-
-    // Get the word from the URL (e.g., /words/example)
-    const word = window.location.pathname.split('/')[2]; // Extract word from URL
-
-    // Fetch word details from the API
-    async function fetchWordDetails(word) {
-        try {
-            const response = await fetch(`${API_URL}/${word}`);
-            const data = await response.json();
-
-            const wordDetailsDiv = document.getElementById('wordDetails');
-
-            if (response.ok) {
-                wordDetailsDiv.innerHTML = `
-                    <p><strong>Word (EN):</strong> ${data}</p>
-                `;
-            } else {
-                wordDetailsDiv.innerHTML = `<p class="error">Error: ${data.error}</p>`;
-            }
-        } catch (error) {
-            console.error('Error fetching word details:', error);
-            document.getElementById('wordDetails').innerHTML = '<p class="error">Failed to fetch word details</p>';
+            const questionTitle = document.getElementById('question-title');
+            questionTitle.innerHTML = `<span class="animated">${soru}</span>`;
+            
+            siklar.forEach((sik, index) => {
+                const button = document.createElement('button');
+                button.innerText = `${String.fromCharCode(65 + index)}) ${sik}`;
+                button.className = 'button';
+                button.onclick = () => cevapla(sik); // Cevapla fonksiyonunu çağır
+                questionArea.appendChild(button);
+            });
         }
-    }
 
-    // Call the function to fetch and display word details
-    fetchWordDetails(word);
-</script>
+        function cevapla(secim) {
+            const questionArea = document.getElementById('question-area');
+            questionArea.innerHTML = ''; // Önceki şıkları sıfırla
 
+            const questionTitle = document.getElementById('question-title');
+            questionTitle.innerHTML = `<span class="animated">Evet seçimin ${secim}</span>`;
+            
+        }
+
+        // Örnek çağrı:
+        sor("Hangisi bir meyvedir?", ["Elma", "Araba", "Ev", "Kalem"]);
+    </script>
 </body>
 </html>

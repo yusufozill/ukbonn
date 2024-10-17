@@ -1,10 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 
-# Ollama uygulamasını başlat
-ollama serve &
+# Ollama sunucusunu arka planda başlat
+/bin/ollama serve &
 
-# Ollama'nın tam olarak başlatılması için bekle
-sleep 5
+# Ollama sunucusu çalışırken llama3.2 modelini indir
+/bin/ollama pull llama3.2 
+/bin/ollama run llama3.2 
 
-# Mistral modelini yükle
-ollama pull mistral
+# Sunucunun kapanmasını engellemek için beklet
+wait

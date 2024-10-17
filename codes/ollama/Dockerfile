@@ -1,11 +1,19 @@
 FROM ollama/ollama
 
+# Çalışma dizinini belirle
 WORKDIR /app/models
 
+# start.sh script'ini container'a kopyala
+COPY start.sh /app/start.sh
+
+# start.sh dosyasına çalıştırma izni ver
+RUN chmod +x /app/start.sh
+
+# Portu expose et
 EXPOSE 11434
 
-CMD ["serve"]
-
+# start.sh script'ini çalıştır
+ENTRYPOINT ["/app/start.sh"]
 
 # fetch('http://localhost:11434/api/chat', {
 #   method: 'POST',

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGPT-Style Tracker</title>
+    <title>UKB test: Ollama</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -114,7 +114,7 @@
 
 <body>
 
-    <h1>ChatGPT-Style Movements Tracker</h1>
+    <h1>UKB test : Ollama </h1>
 
     <div id="chat-container"></div>
 
@@ -128,7 +128,6 @@
         const apiUrl = "http://localhost:3000/movements";
         const chatContainer = document.getElementById("chat-container");
         const sendButton = document.getElementById("send-btn");
-        const loadingElement = document.getElementById('loading');
         const promptInput = document.getElementById("prompt");
 
         async function getMovements() {
@@ -156,8 +155,8 @@
             });
             chatContainer.scrollTop = chatContainer.scrollHeight; 
         }
-
         async function sendPrompt(prompt) {
+
             loading(prompt);
 
             try {
@@ -183,14 +182,11 @@
                 
                 await sendMovement(prompt, messageContent); 
                 await getMovements();
-                refresh();
             } catch (error) {
                 console.error('Error:', error);
                 sentenceDiv.textContent = "Hata oluştu.";
             } finally {
-                loadingElement.style.display = 'none'; 
-                sendButton.disabled = false;
-                sendButton.style.backgroundColor = '#5cb85c'; 
+                refresh(); 
             }
         }
 
@@ -225,7 +221,6 @@
         function loading(PROMPT) {
             sendButton.disabled = true;
             sendButton.style.backgroundColor = '#ccc'; 
-            loadingElement.style.display = 'block'; 
 
             const messageRow = document.createElement("div");
             messageRow.classList.add("message-row");

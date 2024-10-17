@@ -46,7 +46,7 @@ services:
     build: ./codes/ollama
     container_name: ollama
     volumes:
-      - ollama-models:/app/models 
+      - ollama-models:/root/.ollama
       - ./models:/app/models 
       
     ports:
