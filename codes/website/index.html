@@ -33,23 +33,31 @@
             flex-direction: column;
             margin-bottom: 10px;
             padding: 10px;
-            background-color: #e9e9e9;
             border-radius: 5px;
+            
         }
 
         .prompt {
             text-align: right;
             margin-bottom: 5px;
-            background-color: #d4f0f7;
+            background-color: black;
+            color: white;
             padding: 10px;
-            border-radius: 5px;
+            border-radius: 10px;
+            width: fit-content;
+            margin-left: auto;
+            margin-bottom: 40px;
         }
 
         .sentence {
             text-align: left;
-            background-color: #d4eed8;
+            background: #eaeaea;
             padding: 10px;
-            border-radius: 5px;
+            border-radius: 10px;
+            width: fit-content;
+            margin-right: calc(35%);
+
+
         }
 
         #form-container {
@@ -71,7 +79,7 @@
         #form-container button {
             padding: 10px;
             border: none;
-            background-color: #5cb85c;
+            background-color: #000000;
             color: white;
             cursor: pointer;
             border-radius: 5px;
@@ -80,10 +88,11 @@
         #form-container button:disabled {
             background-color: #ccc;
             cursor: not-allowed;
+            margin-bottom: 20px;
         }
 
         #form-container button:hover:enabled {
-            background-color: #4cae4c;
+            background-color: #000000;
         }
 
         /* Yükleniyor animasyonu */
@@ -97,7 +106,7 @@
         .spinner {
             margin: 0 auto;
             border: 4px solid rgba(0, 0, 0, 0.1);
-            border-left-color: #5cb85c;
+            border-left-color: black;
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -119,7 +128,7 @@
     <div id="chat-container"></div>
 
     <div id="form-container">
-        <input type="text" id="prompt" placeholder="Enter prompt..." required>
+        <input type="text" id="prompt" placeholder="Enter prompt..." onkeydown="if (event.keyCode == 13) { sendPrompt(); }" required>
         <button type="submit" id="send-btn">Send</button>
 
     </div>
@@ -241,7 +250,7 @@
         // Refresh button fonksiyonu (isteğe göre ekleyebilirsiniz)
         function refresh() {
             sendButton.disabled = false;
-            sendButton.style.backgroundColor = '#5cb85c'; 
+            sendButton.style.backgroundColor = 'black'; 
             promptInput.value = ""; 
         }
 

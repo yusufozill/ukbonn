@@ -64,6 +64,7 @@ async def create_movement(movement: MovementIn):
 async def list_movements():
     query = movements.select()
     return await database.fetch_all(query)
+    
 
 # Hareket sil
 @app.delete("/movements/{movement_id}")

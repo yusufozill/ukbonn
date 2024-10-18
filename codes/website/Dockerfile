@@ -8,7 +8,9 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 COPY app.py app.py
 COPY index.html index.html
-COPY word.html word.html
+COPY add.html add.html
+COPY study.html study.html
+COPY ollama.png ollama.png
 
 # Gerekli paketleri yükle
 RUN pip install -r requirements.txt

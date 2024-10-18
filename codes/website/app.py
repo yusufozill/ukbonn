@@ -6,6 +6,15 @@ app = Flask(__name__)
 @app.route('/')
 def hello():
     return send_file('index.html')
+@app.route('/ollama')
+def ollamapng():
+    return send_file('ollama.png')
+@app.route('/add')
+def add():
+    return send_file('add.html')
+@app.route('/study')
+def study():
+    return send_file('study.html')
 
 @app.route('/words/<path:word_page>')
 def serve_word_page(word_page):
