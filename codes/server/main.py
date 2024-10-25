@@ -7,6 +7,8 @@ from sqlalchemy import Table, Column, Integer, String, Date, Text, MetaData
 from contextlib import asynccontextmanager
 from typing import List
 from datetime import datetime
+import requests
+import json
 import httpx  # Asenkron HTTP istekleri için kullanacağız
 
 # FastAPI uygulaması
@@ -85,57 +87,24 @@ async def update_movement(movement_id: int, movement: MovementIn):
         return {**movement.dict(), "id": movement_id, "date": str(current_date)}
     raise HTTPException(status_code=404, detail="Movement not found")
 
-
 class ChatRequest(BaseModel):
     prompt: str
 
-async def call_ollama_model(prompt: str) -> str:
-    print(f"Calling Ollama model with prompt: {prompt}")
+
+@app.post("/api/chat")
+async def chat(request: ChatRequest):
     url = 'http://localhost:11434/api/chat'
     headers = {
         'Content-Type': 'application/json'
     }
-    data = {
-        "model": "llama3.2",
-        "messages": [
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        "stream": False
+    payload = {
+        'model': 'llama3.2',
+        'messages': "hello how are you ?",
+        'stream': False
     }
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        try:
-            response = await client.post(url, headers=headers, json=data)
-            print(f"Received response with status code: {response.status_code}")
-            print(f"Response text: {response.text}")  # Yanıtı tam metin olarak yazdır
-        except httpx.RequestError as e:
-            print(f"An error occurred while requesting {url}: {e}")
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+    response = requests.ge(url, headers=headers, data=json.dumps(payload))
+    data = response.json()
+    message_content = data['message']['content']
+    return {"message chat": message_content}
 
-    if response.status_code == 200:
-        print(f"Request successful with status code: {response.status_code}")
-        response_data = response.json()
-        message_content = response_data.get('message', {}).get('content')
-        return message_content  # message.content altındaki metni döndür
-    else:
-        print(f"Request failed with status code: {response.status_code}")
-        return f"Request failed with status code: {response.status_code}"
-
-@app.post("/api/chat")
-async def chat(request: ChatRequest):
-    print(f"Received chat request with prompt: {request.prompt}")
-    try:
-        # Ollama modelini çağır ve sonucu al
-        response_message = await call_ollama_model(request.prompt)
-        if response_message is None:
-            print("Failed to get response from Ollama model")
-        return {
-            "prompt": request.prompt,
-            "sentence": response_message
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))

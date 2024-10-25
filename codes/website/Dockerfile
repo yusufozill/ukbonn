@@ -5,12 +5,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Gerekli dosyaları kopyala
-COPY requirements.txt requirements.txt
-COPY app.py app.py
-COPY index.html index.html
-COPY add.html add.html
-COPY study.html study.html
-COPY ollama.png ollama.png
+COPY . .
 
 # Gerekli paketleri yükle
 RUN pip install -r requirements.txt

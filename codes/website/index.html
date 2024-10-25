@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UKB test: Ollama</title>
+
+    <Script src="models/ollama.js"></Script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -20,7 +23,7 @@
         #chat-container {
             display: flex;
             flex-direction: column;
-            height: 80vh;
+            height: 70vh;
             border: 1px solid #ccc;
             padding: 10px;
             background-color: #fff;
@@ -34,7 +37,7 @@
             margin-bottom: 10px;
             padding: 10px;
             border-radius: 5px;
-            
+
         }
 
         .prompt {
@@ -69,14 +72,16 @@
         }
 
         #form-container input {
+            display: flex;
             padding: 10px;
-            width: 80%;
+            width: 90%;
             margin-right: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-
+      
         #form-container button {
+            display: flex;
             padding: 10px;
             border: none;
             background-color: #000000;
@@ -95,7 +100,7 @@
             background-color: #000000;
         }
 
-        /* Yükleniyor animasyonu */
+        /* Yükleniyor animasyonu hello  */
         #loading {
             display: none;
             text-align: center;
@@ -118,6 +123,21 @@
                 transform: rotate(360deg);
             }
         }
+        #form-container button[id="toggle"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #form-container button[id="toggle"].off {
+            background-color: black;
+
+        }
+
+        span {
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -128,16 +148,27 @@
     <div id="chat-container"></div>
 
     <div id="form-container">
-        <input type="text" id="prompt" placeholder="Enter prompt..." onkeydown="if (event.keyCode == 13) { sendPrompt(); }" required>
+        <span>tools:</span> <button id="toggle" class="toggle-btn">On</button>
+        <input type="text" id="prompt" placeholder="Enter prompt..."
+            onkeydown="if (event.keyCode == 13) { sendPrompt(); }" required>
         <button type="submit" id="send-btn">Send</button>
 
     </div>
-
+</body>
     <script>
-        const apiUrl = "http://localhost:3000/movements";
+        const button = document.getElementById('toggle');
+        let isOn = true;
+
+        button.addEventListener('click', () => {
+            isOn = !isOn;
+            button.textContent = isOn ? 'On' : 'Off';
+            button.classList.toggle('off', !isOn);
+        });
+        const apiUrl = "http://localhost:3000/movements";//api
         const chatContainer = document.getElementById("chat-container");
         const sendButton = document.getElementById("send-btn");
         const promptInput = document.getElementById("prompt");
+
 
         async function getMovements() {
             const response = await fetch(apiUrl);
@@ -162,40 +193,33 @@
 
                 chatContainer.appendChild(messageRow);
             });
-            chatContainer.scrollTop = chatContainer.scrollHeight; 
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
-        async function sendPrompt(prompt) {
+        async function sendPrompt() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) {
+                return;
+            }
+            promptInput.value = "";
+
 
             loading(prompt);
+            newMesage = { role: "user", content: prompt }
+            messages_.push(newMesage)
+
 
             try {
-                const response = await fetch('http://localhost:11434/api/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        model: "llama3.2",
-                        messages: [
-                            {
-                                role: "user",
-                                content: prompt
-                            }
-                        ],
-                        stream: false
-                    })
-                });
-                const data = await response.json();
+                const data = await ollamaA(isOn);
                 const messageContent = data.message.content;
-                console.log("messageContent: ", messageContent);
-                
-                await sendMovement(prompt, messageContent); 
+                await sendMovement(prompt, messageContent);
                 await getMovements();
+
             } catch (error) {
                 console.error('Error:', error);
+                const sentenceDiv = document.createElement("div");
                 sentenceDiv.textContent = "Hata oluştu.";
             } finally {
-                refresh(); 
+                refresh();
             }
         }
 
@@ -221,15 +245,11 @@
         }
 
         document.getElementById("send-btn").addEventListener("click", async function () {
-            const prompt = promptInput.value.trim();
-            if (prompt) {
-                await sendPrompt(prompt);
-                promptInput.value = ""; 
-            }
+            sendPrompt();
         });
         function loading(PROMPT) {
             sendButton.disabled = true;
-            sendButton.style.backgroundColor = '#ccc'; 
+            sendButton.style.backgroundColor = '#ccc';
 
             const messageRow = document.createElement("div");
             messageRow.classList.add("message-row");
@@ -245,18 +265,17 @@
             messageRow.appendChild(promptDiv);
             messageRow.appendChild(sentenceDiv);
             chatContainer.appendChild(messageRow);
-            chatContainer.scrollTop = chatContainer.scrollHeight; 
+            chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         // Refresh button fonksiyonu (isteğe göre ekleyebilirsiniz)
         function refresh() {
             sendButton.disabled = false;
-            sendButton.style.backgroundColor = 'black'; 
-            promptInput.value = ""; 
+            sendButton.style.backgroundColor = 'black';
+            promptInput.value = "";
         }
-
         getMovements();
     </script>
 
-</body>
+
 
 </html>

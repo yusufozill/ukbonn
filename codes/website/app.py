@@ -6,9 +6,22 @@ app = Flask(__name__)
 @app.route('/')
 def hello():
     return send_file('index.html')
-@app.route('/ollama')
+
+# @app.route('/models/ollama.js')
+# def ollamajs():
+#     return send_file('models/ollama.js')
+
+@app.route('/models/<path:jsPath>')
+def sendjs(jsPath):
+    try:
+        return send_file(f'models/{jsPath}')  # Örneğin: some_path.html
+
+    except Exception as e:
+        return str(e), 500  # Hata mesajını döner
+
+@app.route('/icons/ollama.png')
 def ollamapng():
-    return send_file('ollama.png')
+    return send_file('icons/ollama.png')
 @app.route('/add')
 def add():
     return send_file('add.html')
@@ -20,6 +33,7 @@ def study():
 def serve_word_page(word_page):
     try:
         return send_file('word.html')
+
     except Exception as e:
         return str(e), 500  # Hata mesajını döner
 
