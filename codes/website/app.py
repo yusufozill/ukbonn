@@ -18,16 +18,17 @@ def sendjs(jsPath):
 
     except Exception as e:
         return str(e), 500  # Hata mesajını döner
+@app.route('/<path:adress>')
+def index(adress):
+    try:
+        return send_file(f'html/{adress}.html')  # Örneğin: some_path.html
+
+    except Exception as e:
+        return str(e), 500  # Hata mesajını döner
 
 @app.route('/icons/ollama.png')
 def ollamapng():
     return send_file('icons/ollama.png')
-@app.route('/add')
-def add():
-    return send_file('add.html')
-@app.route('/study')
-def study():
-    return send_file('study.html')
 
 @app.route('/words/<path:word_page>')
 def serve_word_page(word_page):
@@ -36,6 +37,7 @@ def serve_word_page(word_page):
 
     except Exception as e:
         return str(e), 500  # Hata mesajını döner
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

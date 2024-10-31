@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chip Listesi</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .input-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 200px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #333;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .chip-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .chip,
+        .bigChip {
+            width: 100px;
+            height: 50px;
+            perspective: 1000px;
+            margin: auto;
+        }
+
+        .chip-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .chip-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .chip-front,
+        .chip-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #333;
+            border-radius: 10px;
+        }
+
+        .chip-front {
+            background-color: white;
+            color: black;
+        }
+
+        .chip-back {
+            background-color: black;
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .word-details {
+            margin-bottom: 20px;
+        }
+
+        #question-area {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #s {
+            font-size: 36px;
+            /* Soru boyutu */
+            font-family: 'Courier New', Courier, monospace;
+            /* Daktilo yazı tipi */
+            color: black;
+        }
+
+        .button {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: black;
+            border: 1px solid black;
+            border-radius: 20px;
+            /* Oval köşeler */
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: rgba(0, 123, 255, 0.3);
+        }
+
+        #output {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        @keyframes typing {
+            from {
+                width: 0;
+            }
+
+            to {
+                width: 100%;
+            }
+        }
+
+        .animated {
+            display: inline-block;
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid black;
+            animation: typing 1s steps(30, end) forwards;
+        }
+
+        #question-title {
+            font-size: 36px;
+            /* Soru boyutu */
+            font-family: 'Courier New', Courier, monospace;
+            /* Daktilo yazı tipi */
+            color: black;
+            text-align: center;
+            /* Metni ortalayarak hizalama */
+            white-space: normal;
+            /* Satır sığmazsa alt satıra geçmesi için */
+            word-wrap: break-word;
+            /* Uzun kelimeleri bölmek için */
+            width: 80%;
+            /* Genişliği %80 yaparak ekrana sığdırma */
+        }
+    </style>
+
+    <style>
+        .prompt {
+            width: 60%;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            border: 2px solid #fff;
+            padding: 20px;
+            font-size: 1.2rem;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            background-color: #fff;
+            margin-left: 5px;
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <img src="icons/ollama.png" class="w-16" alt="ollama logo">
+    <div class="prompt" id="prompt"></div>
+
+    <div id="wordDetails" class="word-details">
+        <!-- Kelime detayları burada gösterilecek -->
+    </div>
+
+    <div class="chip-container">
+        <!-- Burada oluşturulan chip'ler gösterilecek -->
+    </div>
+
+</body>
+
+<script>
+
+    var text = "This is a typing effect, just like a typewriter. If the text is long, it will move to the next line automatically. Feel free to type any text you want!";
+    let index = 0;
+    const speed = 20; // Typing speed in milliseconds
+    const promptElement = document.getElementById('prompt');
+    function type(prompt) {
+        text = prompt;
+        index = 0;
+        promptElement.innerHTML = '';
+        typex();
+
+    }
+    function typex() {
+        if (index < text.length) {
+            promptElement.innerHTML += text[index];
+            index++;
+            setTimeout(typex, speed);
+        } else {
+            promptElement.innerHTML += '<span class="cursor"></span>';
+        }
+    }
+
+
+</script>
+<script>
+    // Kelimeleri listele
+    const apiUrl = 'http://localhost:3000/words/'; // FastAPI URL
+
+    async function getWords() {
+        const chipContainer = document.querySelector('.chip-container');
+        createWord("das", "the");
+        chipContainer.innerHTML = ''; // Chip'leri temizle
+        try {
+            const response = await fetch(apiUrl);
+
+            // HTTP durum kodunu kontrol et
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const words = await response.json();
+
+            words.forEach(word => {
+                createWord(word.word, word.translation);
+
+            });
+        } catch (error) {
+            console.error('There was a problem with the fetch operation:', error);
+        }
+    }
+
+
+    async function findWord() {
+
+
+        const wordInput = document.getElementById('wordInput').value;
+        if (wordInput === '') {
+
+            return;
+        }
+        var prompt = `Write an short answer like "das,Essen,to eat,Ich esse brot" for "Essen". write "artikel,wort,translate,sentence" details for ${wordInput}`;
+        try {
+
+
+            // Kelime detaylarını almak için API'ye istek atıyoruz
+            const response = await fetch('http://localhost:11434/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: "llama3.2",
+                    messages: [
+                        {
+                            role: "user",
+                            content: prompt
+                        }
+                    ],
+                    stream: false
+                })
+            });
+            const data = await response.json();
+            const messageContent = data.message.content;
+            console.log("messageContent: ", messageContent);
+
+            type(messageContent);
+            document.getElementById('addWordButton').style.display = 'inline'; // Butonu gösteriyoruz
+        } catch (error) {
+            console.error('Error fetching word details:', error);
+        }
+    }
+
+    function deleteChip(element) {
+        element.closest('.bigChip').remove();
+    }
+
+    function flipChip(element) {
+        element.classList.toggle('flipped');
+    }
+
+    function createWord(on, arka) {
+        const chipContainer = document.querySelector('.chip-container');
+
+        // Yeni bir bigChip oluşturuluyor
+        const newChip = document.createElement('div');
+        newChip.classList.add('bigChip');
+        newChip.innerHTML = `
+                <div class="chip">
+                    <div class="chip-inner" onclick="flipChip(this)">
+                        <div class="chip-front">${on}</div>
+                        <div class="chip-back">${arka}</div>
+                    </div>
+                </div>
+            `;
+
+        // chipContainer'a yeni chip ekleniyor
+        chipContainer.appendChild(newChip);
+
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const input = document.getElementById('wordInput');
+        input.addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+                findWord();
+            }
+        });
+    });
+
+    getWords();
+</script>
+
+</html>

@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UKB test: Ollama</title>
-
+    <script src="models/functions.js"></script>
     <Script src="models/ollama.js"></Script>
 
     <style>
@@ -168,8 +168,7 @@
         const chatContainer = document.getElementById("chat-container");
         const sendButton = document.getElementById("send-btn");
         const promptInput = document.getElementById("prompt");
-
-
+        
         async function getMovements() {
             const response = await fetch(apiUrl);
             const movements = await response.json();
@@ -194,7 +193,9 @@
                 chatContainer.appendChild(messageRow);
             });
             chatContainer.scrollTop = chatContainer.scrollHeight;
+     
         }
+
         async function sendPrompt() {
             const prompt = promptInput.value.trim();
             if (!prompt) {
