@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Session</title>
+    <style>
+
+        /* Sayfa stili */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        #question-area {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-family: 'Courier New', Courier, monospace;
+            color: black;
+            width: 80%;  /* Genişliği %80 ayarladık */
+            overflow-wrap: break-word;  /* Satır genişliğini aştığında alt satıra geçecek */
+            white-space: pre-wrap; /* Harf harf eklenirken satırın bölünmesini sağlar */
+        }
+
+        .button {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: black;
+            border: 1px solid black;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: rgba(0, 123, 255, 0.3);
+        }
+
+        #output {
+            margin-top: 10px;
+            font-size: 16px;
+        }
+
+        .correct {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: #f44336;
+            color: white;
+        }
+
+        /* Typing effect CSS */
+        .typing::after {
+            content: '|';
+            animation: blink 0.5s step-end infinite;
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        
+        .animated-text {
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            border-right: 3px solid black;
+            width: 80%; /* Yatay genişliği sınırladık */
+            animation: typing 3s steps(30, end), blink-caret 0.5s step-end infinite;
+        }
+    
+        .button {
+            margin: 5px;
+        }
+        .animated-text {
+            animation: typing 2s steps(40, end);
+        }
+        .match-button {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        .match-button.correct {
+            background-color: green;
+        }
+        .match-button.wrong {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <div id="question-title"></div>
+    <div id="question-area"></div>
+    <script>
+    async function excuteCommand(command) {
+        command = command["command"];
+        console.log("Command:", command);
+        const url = `http://localhost:3000/execute?command=${encodeURIComponent(command)}`;
+
+        try {
+            const response = await fetch(url, { method: 'GET' });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("Result:", data);
+            return data;
+        } catch (error) {
+            console.error("Error:", error);
+            return {"Error": error.message};
+        }
+    }
+
+    async function getRandomWords(numWords) {
+        const query = `SELECT * FROM learned_words WHERE mastered = 0 ORDER BY RAND() LIMIT ${numWords}`;
+        const command = { command: query };
+        return await excuteCommand(command);
+    }
+
+    async function getDistractorWords(correctWordId) {
+        const query = `SELECT en FROM learned_words WHERE id != ${correctWordId} ORDER BY RAND() LIMIT 3`;
+        const command = { command: query };
+        const distractors = await excuteCommand(command);
+        return distractors.map(d => d.en);
+    }
+
+        sorClassic(question, ans );
+        async function getOllamaQuestion(word) {
+            const response = await fetch('http://localhost:11434/generate-question', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ word: word.de }),
+            });
+            return await response.json();
+        }
+
+        function displayTypingText(element, text) {
+            element.innerHTML = `<span class="animated-text">${text}</span>`;
+        }
+
+        async function startLearningSession(numQuestions) {
+            words = await getRandomWords(numQuestions);
+            index = 0;
+            startNextQuestion();
+        }
+        async function startNextQuestion() {
+        if (index < words.length) {
+            const word = words[index];
+            const distractors = await getDistractorWords(word.id);
+            const options = [word.en, ...distractors];
+            options.sort(() => Math.random() - 0.5); // Şıkları karıştır
+            sorCoktatanSecmeli(`"What is the meaning of ${word.de}"`, options, word.en, word.id);
+            index++;
+        } else {
+            displayTypingText(document.getElementById('question-title'), 'Oturum tamamlandı!');
+        }
+    }
+        // async function startNextQuestion() {
+        //     if (index < words.length) {
+        //         const word = words[index];
+        //         const distractors = await getDistractorWords(word.id);
+        //         const options = [word.en, ...distractors];
+        //         options.sort(() => Math.random() - 0.5); // Şıkları karıştır
+
+        //         // const ollamaQuestion = await getOllamaQuestion(word);
+        //         // const questionText = ollamaQuestion.question;
+        //         // const correctAnswer = ollamaQuestion.answer;
+
+        //         sorCoktatanSecmeli(questionText, options, correctAnswer, word.id);
+        //         index++;
+        //     } else {
+        //         displayTypingText(document.getElementById('question-title'), 'Oturum tamamlandı!');
+        //     }
+        // }
+
+        async function sorCoktatanSecmeli(soru, siklar, correctAnswer, wordId) {
+            const questionArea = document.getElementById('question-area');
+            questionArea.innerHTML = '';
+            
+            const questionTitle = document.getElementById('question-title');
+            displayTypingText(questionTitle, soru);
+            
+            siklar.forEach((sik, index) => {
+                const button = document.createElement('button');
+                button.innerText = `${String.fromCharCode(65 + index)}) ${sik.charAt(0).toUpperCase() + sik.slice(1)}`;
+                button.className = 'button';
+                button.onclick = () => cevapla(button, sik, correctAnswer, wordId); 
+                questionArea.appendChild(button);
+            });
+        }
+
+        async function cevapla(button, secim, correctAnswer, wordId) {
+            if (secim === correctAnswer) {
+                button.classList.add('correct');
+                setTimeout(() => {
+                    startNextQuestion();
+                }, 1000);
+            } else {
+                button.classList.add('wrong');
+                setTimeout(() => {
+                    button.classList.remove('wrong');
+                }, 1000);
+            }
+        }
+
+        async function startMatchingSession(numWords) {
+            words = await getRandomWords(numWords);
+            index = 0;
+            displayMatchingWords();
+        }
+
+        function displayMatchingWords() {
+            const questionArea = document.getElementById('question-area');
+            questionArea.innerHTML = '';
+
+            const questionTitle = document.getElementById('question-title');
+            displayTypingText(questionTitle, 'Eşleştirme Oturumu');
+
+            const germanWords = words.map(word => ({ text: word.de, id: word.id }));
+            const englishWords = words.map(word => ({ text: word.en, id: word.id }));
+
+            germanWords.sort(() => Math.random() - 0.5);
+            englishWords.sort(() => Math.random() - 0.5);
+
+            germanWords.forEach(word => {
+                const button = document.createElement('div');
+                button.innerText = word.text;
+                button.className = 'match-button';
+                button.dataset.id = word.id;
+                button.onclick = () => selectWord(button, 'de');
+                questionArea.appendChild(button);
+            });
+
+            englishWords.forEach(word => {
+                const button = document.createElement('div');
+                button.innerText = word.text;
+                button.className = 'match-button';
+                button.dataset.id = word.id;
+                button.onclick = () => selectWord(button, 'en');
+                questionArea.appendChild(button);
+            });
+        }
+
+        let selectedGermanWord = null;
+        let selectedEnglishWord = null;
+
+        function selectWord(button, language) {
+            if (language === 'de') {
+                if (selectedGermanWord) {
+                    selectedGermanWord.classList.remove('selected');
+                }
+                selectedGermanWord = button;
+                selectedGermanWord.classList.add('selected');
+            } else {
+                if (selectedEnglishWord) {
+                    selectedEnglishWord.classList.remove('selected');
+                }
+                selectedEnglishWord = button;
+                selectedEnglishWord.classList.add('selected');
+            }
+
+            if (selectedGermanWord && selectedEnglishWord) {
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            if (selectedGermanWord.dataset.id === selectedEnglishWord.dataset.id) {
+                selectedGermanWord.classList.add('correct');
+                selectedEnglishWord.classList.add('correct');
+                setTimeout(() => {
+                    selectedGermanWord.remove();
+                    selectedEnglishWord.remove();
+                    selectedGermanWord = null;
+                    selectedEnglishWord = null;
+                    if (document.querySelectorAll('.match-button').length === 0) {
+                        index += 6;
+                        if (index < words.length) {
+                            displayMatchingWords();
+                        } else {
+                            displayTypingText(document.getElementById('question-title'), 'Oturum tamamlandı!');
+                        }
+                    }
+                }, 1000);
+            } else {
+                selectedGermanWord.classList.add('wrong');
+                selectedEnglishWord.classList.add('wrong');
+                setTimeout(() => {
+                    selectedGermanWord.classList.remove('wrong');
+                    selectedEnglishWord.classList.remove('wrong');
+                    selectedGermanWord.classList.remove('selected');
+                    selectedEnglishWord.classList.remove('selected');
+                    selectedGermanWord = null;
+                    selectedEnglishWord = null;
+                }, 1000);
+            }
+        }
+
+        //startLearningSession(5); // Öğrenme oturumunu başlat
+        // startMatchingSession(10); // Eşleştirme oturumunu başlat
+    </script>
+</body>
+</html>

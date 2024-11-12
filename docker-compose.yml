@@ -10,6 +10,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
       - ./codes/database/init.sql:/docker-entrypoint-initdb.d/init.sql  # SQL betiğini ekleyin
+  
     networks:
       - ukbonn-default
   api:
@@ -39,6 +40,9 @@ services:
     depends_on:
       - api
     restart: always
+    volumes:
+      - ./codes/website:/app  # Yerel dosya sistemini konteynere bağlar
+   
     networks:
       - ukbonn-default
   ollama:
@@ -54,14 +58,10 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0  # Gerekli ortam değişkenleri
       - LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64
-      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
       - NVIDIA_VISIBLE_DEVICES=all
+    runtime: nvidia  # NVIDIA GPU'yu kullanmak için
 
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - capabilities: [gpu]  # GPU'yu belirtir
     depends_on:
       - api
     networks:

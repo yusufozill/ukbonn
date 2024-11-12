@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Soru Sor</title>
     <style>
+        /* Sayfa stili */
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            font-family: 'Arial', sans-serif; /* Font değiştirilebilir */
+            font-family: 'Arial', sans-serif;
             background-color: #f0f0f0;
         }
 
@@ -21,9 +22,12 @@
         }
 
         h1 {
-            font-size: 36px; /* Soru boyutu */
-            font-family: 'Courier New', Courier, monospace; /* Daktilo yazı tipi */
+            font-size: 36px;
+            font-family: 'Courier New', Courier, monospace;
             color: black;
+            width: 80%;  /* Genişliği %80 ayarladık */
+            overflow-wrap: break-word;  /* Satır genişliğini aştığında alt satıra geçecek */
+            white-space: pre-wrap; /* Harf harf eklenirken satırın bölünmesini sağlar */
         }
 
         .button {
@@ -34,7 +38,7 @@
             background-color: rgba(255, 255, 255, 0.8);
             color: black;
             border: 1px solid black;
-            border-radius: 20px; /* Oval köşeler */
+            border-radius: 20px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
@@ -48,54 +52,168 @@
             font-size: 16px;
         }
 
+        .correct {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .incorrect {
+            background-color: #f44336;
+            color: white;
+        }
+
+        /* Typing effect CSS */
+        .typing::after {
+            content: '|';
+            animation: blink 0.5s step-end infinite;
+        }
+
         @keyframes typing {
             from { width: 0; }
             to { width: 100%; }
         }
 
-        .animated {
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+        
+        .animated-text {
             display: inline-block;
-            overflow: hidden; 
-            white-space: nowrap; 
-            border-right: 2px solid black; 
-            animation: typing 1s steps(30, end) forwards;
+            white-space: nowrap;
+            overflow: hidden;
+            border-right: 3px solid black;
+            width: 80%; /* Yatay genişliği sınırladık */
+            animation: typing 3s steps(30, end), blink-caret 0.5s step-end infinite;
         }
     </style>
 </head>
 <body>
     <h1 id="question-title"></h1>
-    
     <div id="question-area"></div>
     <div id="output"></div>
-
-    <script>
-        function sor(soru, siklar) {
-            const questionArea = document.getElementById('question-area');
-            questionArea.innerHTML = ''; // Önceki şıkları sıfırla
-
-            const questionTitle = document.getElementById('question-title');
-            questionTitle.innerHTML = `<span class="animated">${soru}</span>`;
-            
-            siklar.forEach((sik, index) => {
-                const button = document.createElement('button');
-                button.innerText = `${String.fromCharCode(65 + index)}) ${sik}`;
-                button.className = 'button';
-                button.onclick = () => cevapla(sik); // Cevapla fonksiyonunu çağır
-                questionArea.appendChild(button);
-            });
-        }
-
-        function cevapla(secim) {
-            const questionArea = document.getElementById('question-area');
-            questionArea.innerHTML = ''; // Önceki şıkları sıfırla
-
-            const questionTitle = document.getElementById('question-title');
-            questionTitle.innerHTML = `<span class="animated">Evet seçimin ${secim}</span>`;
-            
-        }
-
-        // Örnek çağrı:
-        sor("Hangisi bir meyvedir?", ["Elma", "Araba", "Ev", "Kalem"]);
-    </script>
+    
+   
 </body>
+<script src = "models/ollama.js"></script>
+<script>
+    async function excuteCommand(command) {
+        command = command["command"];
+        console.log("Command:", command);
+        const url = `http://localhost:3000/execute?command=${encodeURIComponent(command)}`;
+
+        try {
+            const response = await fetch(url, { method: 'GET' });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("Result:", data);
+            return data;
+        } catch (error) {
+            console.error("Error:", error);
+            return {"Error": error.message};
+        }
+    }
+
+    async function getRandomWords(numWords) {
+        const query = `SELECT * FROM learned_words WHERE mastered = 0 ORDER BY RAND() LIMIT ${numWords}`;
+        const command = { command: query };
+        return await excuteCommand(command);
+    }
+
+    async function getDistractorWords(correctWordId) {
+        const query = `SELECT en FROM learned_words WHERE id != ${correctWordId} ORDER BY RAND() LIMIT 3`;
+        const command = { command: query };
+        const distractors = await excuteCommand(command);
+        return distractors.map(d => d.en);
+    }
+
+    function displayTypingText(element, text) {
+        element.innerHTML = `<span class="animated-text">${text}</span>`;
+    }
+    function getQuestionFromOllama() {
+        
+        return question;
+    }
+    async function sorCoktatanSecmeli(soru, siklar, correctAnswer, wordId) {
+        const questionArea = document.getElementById('question-area');
+        questionArea.innerHTML = '';
+        
+        const questionTitle = document.getElementById('question-title');
+        displayTypingText(questionTitle, soru);
+        
+        siklar.forEach((sik, index) => {
+            const button = document.createElement('button');
+            button.innerText = `${String.fromCharCode(65 + index)}) ${sik.charAt(0).toUpperCase() + sik.slice(1)}`;
+            button.className = 'button';
+            button.onclick = () => cevapla(button, sik, correctAnswer, wordId); 
+            questionArea.appendChild(button);
+        });
+    }
+
+    async function cevapla(button, secim, correctAnswer, wordId) {
+        const questionArea = document.getElementById('question-area');
+        const questionTitle = document.getElementById('question-title');
+
+        // Doğru cevaba göre renkleri ayarla
+        if (secim === correctAnswer) {
+            button.classList.add('correct');
+            displayTypingText(questionTitle, `Correct!: ${secim}`);
+            await updateScore(wordId, true);
+        } else {
+            button.classList.add('incorrect');
+            displayTypingText(questionTitle, `Wrong! Answer is: ${correctAnswer}`);
+            document.querySelectorAll('.button').forEach(btn => {
+                if (btn.innerText.includes(correctAnswer)) {
+                    btn.classList.add('correct');
+                }
+            });
+            await updateScore(wordId, false);
+        }
+
+        // 2 saniye bekledikten sonra diğer soruya geç
+        setTimeout(startNextQuestion, 2000);
+    }
+
+    async function updateScore(wordId, isCorrect) {
+        const query = `
+            UPDATE learned_words 
+            SET 
+                review_count = review_count + 1,
+                last_reviewed = NOW(),
+                strength_score = strength_score ${isCorrect ? "+ 1" : "- 1"},
+                mastered = CASE WHEN strength_score >= 5 THEN 1 ELSE 0 END,
+                last_correct = ${isCorrect ? "NOW()" : "last_correct"}
+            WHERE id = ${wordId};
+        `;
+        
+        const command = { command: query };
+        await excuteCommand(command);
+    }
+
+    let words, index;
+
+    async function startLearningSession(numQuestions) {
+        words = await getRandomWords(numQuestions);
+        index = 0;
+        startNextQuestion();
+    }
+
+    async function startNextQuestion() {
+        if (index < words.length) {
+            const word = words[index];
+            const distractors = await getDistractorWords(word.id);
+            const options = [word.en, ...distractors];
+            options.sort(() => Math.random() - 0.5); // Şıkları karıştır
+            sorCoktatanSecmeli(`"What is the meaning of ${word.de}"`, options, word.en, word.id);
+            index++;
+        } else {
+            displayTypingText(document.getElementById('question-title'), 'Oturum tamamlandı!');
+        }
+    }
+
+    startLearningSession(5); // Öğrenme oturumunu başlat
+</script>
 </html>

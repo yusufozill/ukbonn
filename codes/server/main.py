@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
 from databases import Database
-from sqlalchemy import Table, Column, Integer, String, Date, text, Text, MetaData, Boolean, create_engine
+from sqlalchemy import Table, Column, Integer, String, Date, text, Text, MetaData, Boolean, create_engine,select
 from contextlib import asynccontextmanager
 from typing import List, Optional
 from datetime import date, datetime
@@ -89,13 +89,14 @@ async def update_movement(movement_id: int, movement: MovementIn):
 
 # Kelime model sınıfları
 class WordIn(BaseModel):
-    word: str
-    translation: str
-    part_of_speech: str
-    article: str
-    gender: str
-    example: str
-    learned_date: str  # YYYY-MM-DD formatında tarih
+    de: str
+    en: str
+    tr: str
+    article: Optional[str] = None
+    gender: Optional[str] = None
+    example: Optional[str] = None
+    learned_date: Optional[str] = None
+    grade: Optional[str] = None
 
 class WordOut(WordIn):
     id: int
@@ -108,10 +109,10 @@ words = Table(
     "learned_words",
     metadata,
     Column("id", Integer, primary_key=True, autoincrement=True),
-    Column("user_id", Integer, default=1),
-    Column("word", String, nullable=False),
-    Column("translation", String, nullable=False),
-    Column("language", String, default='de'),
+    Column("user_id", Integer, default=1),                   # Sabit kullanıcı kimliği
+    Column("de", String, nullable=False),
+    Column("en", String, nullable=False),
+    Column("tr", String),
     Column("part_of_speech", String),
     Column("article", String),
     Column("gender", String),
@@ -120,7 +121,13 @@ words = Table(
     Column("review_count", Integer, default=0),
     Column("last_reviewed", Date),
     Column("mastered", Boolean, default=False),
+    Column("strength_score", Integer, default=0),            # Öğrenme gücü puanı
+    Column("last_correct", Date),                            # En son doğru cevaplanma tarihi
+    Column("difficulty", String(50)),                        # Zorluk seviyesi (örneğin, "kolay", "orta", "zor")
+    Column("category", String(50)),                          # Tematik veya gramer kategorisi
+    Column("grade", String(5))                               # Dil seviyesi (örneğin, "A1", "A2", "B1")
 )
+
 
 # Kelimeleri listele
 @app.get("/words/", response_model=List[WordOut])
@@ -137,7 +144,7 @@ async def list_words():
         }
         for word in results
     ]
-    return JSONResponse(content=words_list, media_type="application/json; charset=utf-8")
+    return words_list
 
 
 # Kelime sil
@@ -149,12 +156,57 @@ async def delete_word(word_id: int):
         return {"message": "Word deleted successfully."}
     raise HTTPException(status_code=404, detail="Word not found")
 
+
+
+
 # Kelime ekle
 @app.post("/words/", response_model=WordOut)
 async def add_word(word: WordIn):
-    query = words.insert().values(**word.dict())
-    word_id = await database.execute(query)
-    return {**word.dict(), "id": word_id, "review_count": 0, "last_reviewed": None, "mastered": False}
+    # Define default values for fields
+    DEFAULT_VALUES = {
+        "part_of_speech": "",
+        "article": "",
+        "gender": "",
+        "example": "",
+        "learned_date": None,  # Set to None instead of an empty string
+        "review_count": 0,
+        "last_reviewed": None,
+        "mastered": False,
+        "strength_score": 0,
+        "last_correct": None,
+        "difficulty": "",
+        "category": "",
+        "grade": ""
+    }
+    try:
+        # Check if the word already exists
+        query = select(words).where(
+            (words.c.de == word.de) &
+            (words.c.en == word.en) &
+            (words.c.tr == word.tr)
+        )
+        existing_word = await database.fetch_one(query)
+        
+        if existing_word:
+            return existing_word
+
+        # Fill missing fields with default values
+        word_data = {**DEFAULT_VALUES, **word.dict()}
+
+        # Ensure learned_date is None if not provided
+        if not word_data["learned_date"]:
+            word_data["learned_date"] = None
+
+        # Insert the new word
+        query = words.insert().values(**word_data)
+        word_id = await database.execute(query)
+        
+        return {**word_data, "id": word_id}
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=400, detail={"error": str(e.orig)})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": str(e)})
+
 
 # Kelime güncelle
 @app.put("/words/{word_id}", response_model=WordOut)
@@ -205,47 +257,9 @@ async def get_words(which: str, word: str):
         return "Error is : " + str(e)
 
 
-@app.get("/artikel/{word}")
-async def search_artikel(word):
-    async def check_url(url):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                return response.status == 200
-
-    word = str(word).lower()
-    special_cases = {"t-shirt": "das", "u-bahn": "die"}
-    if word in special_cases:
-        return special_cases[word]
-    
-    word = word.capitalize()
-    urls = [
-        (f'https://der-artikel.de/der/{word}.html', "der"),
-        (f'https://der-artikel.de/die/{word}.html', "die"),
-        (f'https://der-artikel.de/das/{word}.html', "das")
-    ]
-    
-    async with aiohttp.ClientSession() as session:
-        tasks = [check_url(url) for url, _ in urls]
-        results = await asyncio.gather(*tasks)
-
-    for i, success in enumerate(results):
-        if success:
-            return urls[i][1]
-    
-    word_without_umlaut = word.lower().translate(str.maketrans("äöüß", "aous"))
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"https://www.qmez.de:8444/v1/scanner/es/s?w={word_without_umlaut}") as response:
-            if response.status == 200:
-                result = await response.json()
-                return result.get("article", f"Substantiv »{word}« wurde nicht gefunden.")
-    
-    return f"Substantiv »{word}« wurde nicht gefunden."
-
-
-
+from sqlalchemy.exc import SQLAlchemyError
 # FastAPI asenkron execute rotası
 @app.get("/execute")
-
 async def execute_query(command: str):
     try:
         # DELETE komutu içerip içermediğini kontrol et
@@ -258,6 +272,14 @@ async def execute_query(command: str):
                 raise HTTPException(status_code=404, detail={"error": "No rows deleted. Check the condition."})
             
             return JSONResponse(content={"message": f"{result} row(s) deleted."}, media_type="application/json; charset=utf-8")
+
+        elif command.strip().upper().startswith("INSERT") or command.strip().upper().startswith("UPDATE"):
+            # INSERT ve UPDATE komutları için execute kullan
+            print("command geldi: ", command)
+
+            result = await database.execute(text(command))
+            print("result geldi: ", result)
+            return JSONResponse(content={"message": "Query executed successfully."}, media_type="application/json; charset=utf-8")
         
         else:
             # Diğer SQL komutları için fetch_all kullan
@@ -273,7 +295,6 @@ async def execute_query(command: str):
         raise HTTPException(status_code=400, detail={"error": str(e.orig)})
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": str(e)})
-    
 
 
 

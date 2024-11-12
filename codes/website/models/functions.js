@@ -1,52 +1,4 @@
 
-async function searchArtikel(word) {
-	word = toString(word).toLowerCase();
-	if (word == "t-shirt") return "das";
-	if (word == "u-bahn") return "die";
-	word = word.charAt(0).toUpperCase() + word.slice(1);
-
-	var request = new XMLHttpRequest();
-	request.open('GET', 'https://der-artikel.de/der/' + word + '.html', true);
-	request.onreadystatechange = function () {
-		if (request.readyState === 4) {
-			if (request.status === 200) {
-				return "der"
-			} else {
-				return searchDieArticle(word);
-			}
-		}
-	};
-	request.send();
-}
-async function searchDieArticle(word) {
-	var request2 = new XMLHttpRequest();
-	request2.open('GET', 'https://der-artikel.de/die/' + word + '.html', true);
-	request2.onreadystatechange = function () {
-		if (request2.readyState === 4) {
-			if (request2.status === 200) {
-				return "die";
-			} else {
-				return searchDasArticle(word);
-			}
-		}
-	};
-	request2.send();
-}
-async function searchDasArticle(word) {
-
-	var request3 = new XMLHttpRequest();
-	request3.open('GET', 'https://der-artikel.de/das/' + word + '.html', true);
-	request3.onreadystatechange = function () {
-		if (request3.readyState === 4) {
-			if (request3.status === 200) {
-				return "das";
-			} else {
-				return similarWord(word);
-			}
-		}
-	};
-	request3.send();
-}
 function deUmlaut(value) {
 	value = value.toLowerCase();
 	value = value.replace(/ä/g, 'a');
@@ -56,78 +8,6 @@ function deUmlaut(value) {
 	return value;
 }
 
-async function similarWord(word) {
-	word = word.toLowerCase();
-	var request = new XMLHttpRequest();
-	var wordWithoutUmlaut = deUmlaut(word);
-	request.open('GET', "https://www.qmez.de:8444/v1/scanner/es/s?w=" + wordWithoutUmlaut, true);
-	request.onreadystatechange = function () {
-		if (this.readyState == 4 && this.status == 200) {
-
-			var result = this.responseText;
-			if (result.length == 0) {
-				word = word.charAt(0).toUpperCase() + word.slice(1);
-				return "Substantiv »" + word + "« wurde nicht gefunden.";
-
-			} else {
-				var json = JSON.parse(result);
-				w = json.word;
-				a = json.article;
-				return a;
-			}
-			//apiNotFoundWord(word.toLowerCase());
-		}
-	};
-	request.send();
-}
-async function searchAdjective(word) {
-	word = word.toLowerCase();
-	try {
-		const response = await fetch(`https://localhost:3000/search/adjectiv/${word}.html`);
-		if (!response.ok) {
-			return `Das Nomen »${word}« wurde nicht gefunden.`;
-		}
-		const text = await response.text();
-		const result = text.split("<!-- About -->")[1].split("<!-- Services -->")[0];
-		return result;
-	} catch (error) {
-		return `Fehler: ${error.message}`;
-	}
-}
-async function searchNoun(article, word) {
-	word = word.toLowerCase();
-	var article = article.toLowerCase();
-
-	if (word === "möchte") {
-		word = "möchten";
-	}
-	try {
-		const response = await fetch(`https://localhost:3000/search/${article}/${word}.html`);
-		if (!response.ok) {
-			return `Das Nomen »${word}« wurde nicht gefunden.`;
-		}
-		const text = await response.text();
-		const result = text.split("<!-- About -->")[1].split("<!-- Services -->")[0];
-		return result;
-	} catch (error) {
-		return `Fehler: ${error.message}`;
-	}
-}
-async function searchVerb(word) {
-	word = word.toLowerCase();
-
-	try {
-		const response = await fetch(`https://localhost:3000/search/verb/${word}.html`);
-		if (!response.ok) {
-			return `Das Nomen »${word}« wurde nicht gefunden.`;
-		}
-		const text = await response.text();
-		const result = text.split("<!-- About -->")[1].split("<!-- Services -->")[0];
-		return result;
-	} catch (error) {
-		return `Fehler: ${error.message}`;
-	}
-}
 
 
 async function getDateTime() {
@@ -141,7 +21,6 @@ async function getDateTime() {
 }
 async function excuteCommand(command) {
 	
-
 	command = command["command"];
 	console.log("Command:", command);
     const url = `http://localhost:3000/execute?command=${encodeURIComponent(command)}`;
@@ -164,6 +43,39 @@ async function excuteCommand(command) {
 		return {"Error": error.message};
     }
 }
+
+async function getRandomWords(numWords, masteredFilter = null, difficultyFilter = null) {
+    let query = `SELECT * FROM learned_words WHERE 1=1`;
+    
+    // Öğrenme durumu filtresi
+    if (masteredFilter !== null) {
+        query += ` AND mastered = ${masteredFilter ? 1 : 0}`;
+    }
+    
+    // Zorluk seviyesi filtresi (1-5 arası bir değer bekliyor)
+    if (difficultyFilter !== null) {
+        query += ` AND difficulty = ${difficultyFilter}`;
+    }
+    
+    // Rastgele sıralama ve limit
+    query += ` ORDER BY RAND() LIMIT ${numWords}`;
+    
+    // Komutu çalıştırmak için excuteCommand fonksiyonunu kullan
+    const command = { command: query };
+    const result = await excuteCommand(command);
+
+    try {
+        const parsedResult = JSON.parse(result);
+        console.log("Random Words:", parsedResult);
+        return parsedResult;
+    } catch (error) {
+        console.error("JSON Parse Error:", error);
+        return { "Error": "JSON Parse Error" };
+    }
+}
+
+
+
 
 async function addUser(info) {
 	var mail = info["mail"];
@@ -188,36 +100,3 @@ async function addUser(info) {
 	}
 }
 
-// Kullanıcıları listeleme fonksiyonu
-async function listUsers() {
-
-	var apiUrli = 'http://localhost:3000/users/';
-	try {
-		const response = await fetch(apiUrli);
-		const users = await response.json();
-		return JSON.stringify(users);
-
-	} catch (error) {
-		return error;
-	}
-}
-
-// Kullanıcı silme fonksiyonu
-async function deleteUser(userId) {
-	userId = userId["user_id"];
-
-	var apiUrli = 'http://localhost:3000/users/';
-	try {
-		const response = await fetch(`${apiUrli}${userId}`, {
-			method: 'DELETE'
-		});
-		if (response.ok) {
-			return 'User deleted successfully';
-		} else {
-			const error = await response.json();
-			return error;
-		}
-	} catch (error) {
-		return 'Failed to delete user: '+ error;
-	}
-}

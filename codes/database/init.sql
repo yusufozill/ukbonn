@@ -14,9 +14,9 @@ VALUES
 CREATE TABLE learned_words (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT DEFAULT 1,                   -- Sabit kullanıcı kimliği
-    word VARCHAR(255),
-    translation VARCHAR(255),
-    language VARCHAR(10) DEFAULT 'de',       -- Varsayılan olarak Almanca
+    de VARCHAR(255),
+    en VARCHAR(255),
+    tr VARCHAR(255),
     part_of_speech VARCHAR(50),
     article VARCHAR(10),
     gender VARCHAR(10),
@@ -27,12 +27,12 @@ CREATE TABLE learned_words (
     mastered BOOLEAN DEFAULT FALSE,
     strength_score INT DEFAULT 0,            -- Öğrenme gücü puanı
     last_correct DATE,                       -- En son doğru cevaplanma tarihi
-    difficulty VARCHAR(50),                  -- Zorluk seviyesi (örneğin, "kolay", "orta", "zor")
+    difficulty VARCHAR(50),                  -- Kelimenin sıklık seviyesi (örneğin, "Çok sık", "yagın", "nadir")
     category VARCHAR(50),                    -- Tematik veya gramer kategorisi
     grade VARCHAR(5)                         -- Dil seviyesi (örneğin, "A1", "A2", "B1")
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-INSERT INTO learned_words (word, translation, part_of_speech, article, gender, example, learned_date,category,grade)
+INSERT INTO learned_words (de, en, part_of_speech, article, gender, example, learned_date,category,grade)
 VALUES
     ('Haus', 'house', 'noun', 'das', 'neuter', 'Das Haus ist groß.', '2024-10-25' ,'Home', "A1"),
     ('Auto', 'car', 'noun', 'das', 'neuter', 'Das Auto ist schnell.', '2024-10-25' ,'Transportation', "A1"),

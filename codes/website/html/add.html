@@ -1,352 +1,424 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chip Listesi</title>
+    <title>Kelime Yönetimi</title>
     <style>
+        /* Temel stil ayarları */
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
             font-family: Arial, sans-serif;
+            background-color: #f7f7f8;
+            color: #333;
+            margin: 20px;
         }
 
-        .input-container {
+        h1,
+        h2 {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            cursor: pointer;
+        
+        }
+        th.sort-asc::after {
+            content: " ▲";
+        }
+
+        th.sort-desc::after {
+            content: " ▼";
+        }
+        #wordForm {
             display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
+            align-items: flex-end;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
-        input[type="text"] {
-            width: 200px;
+        #word {
             padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #333;
-            margin-right: 10px;
+            width: 250px;
+            text-align: center;
             font-size: 16px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
         }
 
-        button {
-            padding: 10px 15px;
-            background-color: #333;
-            color: white;
+        #toggleButton {
+            background-color: #000;
+            color: #fff;
+            padding: 10px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-        }
-
-        .chip-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .chip,
-        .bigChip {
-            width: 100px;
-            height: 50px;
-            perspective: 1000px;
-            margin: auto;
-        }
-
-        .chip-inner {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            text-align: center;
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-            cursor: pointer;
-        }
-
-        .chip-inner.flipped {
-            transform: rotateY(180deg);
-        }
-
-        .chip-front,
-        .chip-back {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid #333;
-            border-radius: 10px;
-        }
-
-        .chip-front {
-            background-color: white;
-            color: black;
-        }
-
-        .chip-back {
-            background-color: black;
-            color: white;
-            transform: rotateY(180deg);
-        }
-
-        .word-details {
-            margin-bottom: 20px;
-        }
-
-        #question-area {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        #s {
-            font-size: 36px;
-            /* Soru boyutu */
-            font-family: 'Courier New', Courier, monospace;
-            /* Daktilo yazı tipi */
-            color: black;
-        }
-
-        .button {
-            display: inline-block;
-            margin: 5px;
-            padding: 10px 15px;
             font-size: 16px;
-            background-color: rgba(255, 255, 255, 0.8);
-            color: black;
-            border: 1px solid black;
-            border-radius: 20px;
-            /* Oval köşeler */
-            cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s ease;
         }
 
-        .button:hover {
-            background-color: rgba(0, 123, 255, 0.3);
+        #toggleButton:hover {
+            background-color: #333;
         }
 
-        #output {
-            margin-top: 10px;
-            font-size: 16px;
-        }
-
-        @keyframes typing {
-            from {
-                width: 0;
-            }
-
-            to {
-                width: 100%;
-            }
-        }
-
-        .animated {
-            display: inline-block;
-            overflow: hidden;
-            white-space: nowrap;
-            border-right: 2px solid black;
-            animation: typing 1s steps(30, end) forwards;
-        }
-
-        #question-title {
-            font-size: 36px;
-            /* Soru boyutu */
-            font-family: 'Courier New', Courier, monospace;
-            /* Daktilo yazı tipi */
-            color: black;
-            text-align: center;
-            /* Metni ortalayarak hizalama */
-            white-space: normal;
-            /* Satır sığmazsa alt satıra geçmesi için */
-            word-wrap: break-word;
-            /* Uzun kelimeleri bölmek için */
-            width: 80%;
-            /* Genişliği %80 yaparak ekrana sığdırma */
+        .w-16 {
+            width: 5rem;
         }
     </style>
-
-    <style>
-        .prompt {
-            width: 60%;
-            white-space: pre-wrap;
-            overflow-wrap: break-word;
-            border: 2px solid #fff;
-            padding: 20px;
-            font-size: 1.2rem;
-        }
-
-        .cursor {
-            display: inline-block;
-            width: 10px;
-            background-color: #fff;
-            margin-left: 5px;
-            animation: blink 0.7s infinite;
-        }
-
-        @keyframes blink {
-            0% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0;
-            }
-
-            100% {
-                opacity: 1;
-            }
-        }
-    </style>
-
 </head>
 
 <body>
-    <img src="icons/ollama.png" class="w-16" alt="ollama logo">
-    <div class="prompt" id="prompt"></div>
 
-    <div id="wordDetails" class="word-details">
-        <!-- Kelime detayları burada gösterilecek -->
+    <h1>Kelime Yönetimi</h1>
+    <div id="wordForm">
+        <input type="text" id="word" name="word" placeholder="Word" required>
+        <button type="button" id="toggleButton" onclick="toggleFunction()">Ask Ollama</button>
     </div>
+    <h2>CSV Dosyası Yükle</h2>
+    <form id="csvForm">
+        <input type="file" id="csvFile" accept=".csv" required>
+        <button type="button" onclick="uploadCSV()">Yükle</button>
+    </form>
+    <h2>Word list</h2>
+    <table id="wordTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable(0)">Artikel</th>
+                <th onclick="sortTable(1)">de</th>
+                <th onclick="sortTable(2)">en</th>
+                <th onclick="sortTable(3)">tr</th>
+                <th onclick="sortTable(4)">part_of_speech</th>
+                <th onclick="sortTable(5)">learned_date</th>
+                <th onclick="sortTable(6)">review_count</th>
+                <th onclick="sortTable(7)">last_reviewed</th>
+                <th onclick="sortTable(8)">mastered</th>
+                <th onclick="sortTable(9)">strength_score</th>
+                <th onclick="sortTable(10)">last_correct</th>
+                <th onclick="sortTable(11)">difficulty</th>
+                <th onclick="sortTable(12)">category</th>
+                <th onclick="sortTable(13)">grade</th>
 
-    <div class="chip-container">
-        <!-- Burada oluşturulan chip'ler gösterilecek -->
-    </div>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody id="wordTamplate"></tbody>
+        <tbody id="wordList"></tbody>
+    </table>
 
-</body>
+    <script>
+         function sortTable(columnIndex) {
+            const table = document.getElementById("wordTable");
+            const tbody = table.tBodies[1];
+            const rows = Array.from(tbody.rows);
+            const th = table.tHead.rows[0].cells[columnIndex];
+            const isAscending = th.classList.contains("sort-asc");
+            console.log(isAscending, columnIndex, th, rows);
+            rows.sort((rowA, rowB) => {
+                const cellA = rowA.cells[columnIndex].textContent.trim();
+                const cellB = rowB.cells[columnIndex].textContent.trim();
 
-<script>
+                if (!isNaN(cellA) && !isNaN(cellB)) {
+                    return isAscending ? cellA - cellB : cellB - cellA;
+                }
 
-    var text = "This is a typing effect, just like a typewriter. If the text is long, it will move to the next line automatically. Feel free to type any text you want!";
-    let index = 0;
-    const speed = 20; // Typing speed in milliseconds
-    const promptElement = document.getElementById('prompt');
-    function type(prompt) {
-        text = prompt;
-        index = 0;
-        promptElement.innerHTML = '';
-        typex();
+                return isAscending
+                    ? cellA.localeCompare(cellB)
+                    : cellB.localeCompare(cellA);
+            });
+            const wordList = document.getElementById('wordList');
+            wordList.innerHTML = '';
+            tbody.append(...rows);
 
-    }
-    function typex() {
-        if (index < text.length) {
-            promptElement.innerHTML += text[index];
-            index++;
-            setTimeout(typex, speed);
-        } else {
-            promptElement.innerHTML += '<span class="cursor"></span>';
+            Array.from(th.parentNode.children).forEach(th => th.classList.remove("sort-asc", "sort-desc"));
+            th.classList.toggle("sort-asc", !isAscending);
+            th.classList.toggle("sort-desc", isAscending);
         }
-    }
+        let isFirstClick = true; // İlk tıklama durumu
+        const apiUrl = 'http://localhost:3000/words/'; // FastAPI URL
+        var messages_ = [];
 
+        async function toggleFunction() {
+            const button = document.getElementById("toggleButton");
+            button.disabled = true;
 
-</script>
-<script>
-    // Kelimeleri listele
-    const apiUrl = 'http://localhost:3000/words/'; // FastAPI URL
-
-    async function getWords() {
-        const chipContainer = document.querySelector('.chip-container');
-        createWord("das", "the");
-        chipContainer.innerHTML = ''; // Chip'leri temizle
-        try {
-            const response = await fetch(apiUrl);
-
-            // HTTP durum kodunu kontrol et
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+            if (isFirstClick) {
+                button.textContent = "Gönder"; // Yazıyı 'Gönder' yap
+                var word = document.getElementById("word").value;
+                messages_.push({
+                    role: 'user',
+                    content:
+                        //"Please provide all details {translation, part_of_speech, article, gender,example, category, grade } about '" + word + "' word and add to the database. All parameters must be filled in.",
+                        "Please provide the grammar key for the German word '" + word +
+                        "' with correct {translation, part_of_speech, article, gender,example, category, grade } information."
+                });
+                await ollamaA();
+            } else {
+                button.textContent = "Ask Ollama";
+                await sendWord({ word: document.getElementById("word").value });
             }
 
-            const words = await response.json();
-
-            words.forEach(word => {
-                createWord(word.word, word.translation);
-
-            });
-        } catch (error) {
-            console.error('There was a problem with the fetch operation:', error);
+            button.disabled = false;
+            isFirstClick = !isFirstClick;
         }
-    }
+        var words = [];
+        // Kelimeleri listele
+        async function listWords(number) {
 
+            if (!number) number = 100;
+            number = parseInt(number);
 
-    async function findWord() {
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) throw new Error('Network response was not ok');
 
+                const wordList = document.getElementById('wordList');
+                wordList.innerHTML = '';
+                var words = await getRandomWords(number, null, null);
+                words.forEach(word => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${word.article}</td>
+                        <td>${word.de}</td>
+                        <td>${word.en}</td>
+                        <td>${word.tr || 'N/A'}</td>
+                        <td>${word.part_of_speech || 'N/A'}</td>
+                        <td>${word.learned_date || 'N/A'}</td>
+                        <td>${word.review_count || 'N/A'}</td>
+                        <td>${word.last_reviewed || 'N/A'}</td>
+                        <td>${word.mastered || 'N/A'}</td>
+                        <td>${word.strength_score || 'N/A'}</td>
+                        <td>${word.last_correct || 'N/A'}</td>
+                        <td>${word.difficulty || 'N/A'}</td>
+                        <td>${word.category || 'N/A'}</td>
+                        <td>${word.grade || 'N/A'}</td>
 
-        const wordInput = document.getElementById('wordInput').value;
-        if (wordInput === '') {
-
-            return;
+                        <td><button onclick="deleteWord(${word.id})">Delete</button></td>
+                    `;
+                    wordList.appendChild(row);
+                });
+            } catch (error) {
+                console.error('There was a problem with the fetch operation:', error);
+            }
         }
-        var prompt = `Write an short answer like "das,Essen,to eat,Ich esse brot" for "Essen". write "artikel,wort,translate,sentence" details for ${wordInput}`;
-        try {
 
-
-            // Kelime detaylarını almak için API'ye istek atıyoruz
-            const response = await fetch('http://localhost:11434/api/chat', {
+        // Kelime kaydet
+        async function sendWord(newWord) {
+            const apiUrl = 'http://localhost:3000/words';
+            const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    model: "llama3.2",
-                    messages: [
-                        {
-                            role: "user",
-                            content: prompt
-                        }
-                    ],
-                    stream: false
-                })
+                    de: newWord.de || '',
+                    en: newWord.en || '',
+                    tr: newWord.tr || '',
+                    article: newWord.article || '',
+                    grade: newWord.grade || '',
+                    gender: newWord.gender || '',
+                    example: newWord.example || '',
+                    learned_date: newWord.learned_date || ''
+                }),
             });
-            const data = await response.json();
-            const messageContent = data.message.content;
-            console.log("messageContent: ", messageContent);
 
-            type(messageContent);
-            document.getElementById('addWordButton').style.display = 'inline'; // Butonu gösteriyoruz
-        } catch (error) {
-            console.error('Error fetching word details:', error);
-        }
-    }
-
-    function deleteChip(element) {
-        element.closest('.bigChip').remove();
-    }
-
-    function flipChip(element) {
-        element.classList.toggle('flipped');
-    }
-
-    function createWord(on, arka) {
-        const chipContainer = document.querySelector('.chip-container');
-
-        // Yeni bir bigChip oluşturuluyor
-        const newChip = document.createElement('div');
-        newChip.classList.add('bigChip');
-        newChip.innerHTML = `
-                <div class="chip">
-                    <div class="chip-inner" onclick="flipChip(this)">
-                        <div class="chip-front">${on}</div>
-                        <div class="chip-back">${arka}</div>
-                    </div>
-                </div>
-            `;
-
-        // chipContainer'a yeni chip ekleniyor
-        chipContainer.appendChild(newChip);
-
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const input = document.getElementById('wordInput');
-        input.addEventListener('keypress', function (event) {
-            if (event.key === 'Enter') {
-                findWord();
+            if (!response.ok) {
+                const errorMessage = await response.text();
+                console.error('Error:', errorMessage);
+                throw new Error('Failed to send word');
             }
-        });
-    });
 
-    getWords();
-</script>
+            console.log('Word sent successfully:', newWord);
+
+            listWords(4000);
+        }
+
+
+
+
+        // Kelime sil
+        async function deleteWord(wordId) {
+            await fetch(`${apiUrl}${wordId}`, {
+                method: 'DELETE',
+            });
+            listWords(4000);
+        }
+
+        window.onload = listWords; // Sayfa yüklendiğinde kelimeleri listele
+
+        async function findWord({ de, en, tr, part_of_speech, article, gender, example, category, grade }) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                        <td>${word.article}</td>
+                        <td>${word.de}</td>
+                        <td>${word.en}</td>
+                        <td>${word.tr || 'N/A'}</td>
+                        <td>${word.grade || 'N/A'}</td>
+                <td><button onclick="sendWord({ de: '${de}', en: '${en}', part_of_speech: '${part_of_speech}', article: '${article}', gender: '${gender}', example: '${example}', category: '${category}', grade: '${grade}' })">Delete</button></td>
+            `;
+            document.getElementById("wordTamplate").appendChild(row);
+        }
+
+
+        async function ollamaA() {
+            const url = 'http://localhost:11434/api/chat';
+            const modelName = "llama3.2";
+            const tools = [
+                {
+                    type: 'function',
+                    function: {
+                        name: "add_word",
+                        description: "Generates a key based on German grammar details provided.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                word: {
+                                    type: "string",
+                                    description: "The word to be added, in its original language."
+                                },
+                                translation: {
+                                    type: "string",
+                                    description: "The translation of the word in the target language."
+                                },
+                                part_of_speech: {
+                                    type: "string",
+                                    description: "The grammatical category of the word, e.g., noun, verb, adjective."
+                                },
+                                article: {
+                                    type: "string",
+                                    description: "The grammatical article used with the word, if applicable, e.g., 'der,' 'die,' or 'das' in German."
+                                },
+                                gender: {
+                                    type: "string",
+                                    description: "The grammatical gender of the word, if applicable, e.g., masculine, feminine, neuter."
+                                },
+                                example: {
+                                    type: "string",
+                                    description: "An example sentence that uses the word in context."
+                                },
+                                category: {
+                                    type: "string",
+                                    description: "The thematic or grammatical category, e.g., food, transportation, or verb conjugation."
+                                },
+                                grade: {
+                                    type: "string",
+                                    description: "The language proficiency level, e.g., A1, A2, B1, that best matches the word's usage."
+                                }
+                            },
+                            required: ["word", "translation", "part_of_speech", "article", "gender", "example", "category", "grade"]
+                        }
+                    }
+                }
+            ];
+
+            const data = { model: modelName, messages: messages_, tools: tools, stream: false };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    messages_.push(result.message);
+
+                    if (!result.message.tool_calls || result.message.tool_calls.length === 0) {
+                        console.log("The model did NOT use the function. Answer writed");
+
+                        return result;
+                    } else {
+                        console.log("The model USED the function. Asking to tools");
+
+                        const availableFunctions = {
+                            add_word: findWord
+                        };
+
+                        for (const tool of result.message.tool_calls) {
+                            if (availableFunctions[tool.function.name] === undefined) {
+                                messages_.push({
+                                    role: 'tool',
+                                    content: `Function ${tool.function.name} not found`,
+                                });
+                                console.log(`Function ${tool.function.name} not found`);
+                                continue;
+                            }
+
+                            const functionToCall = availableFunctions[tool.function.name];
+                            const functionResponse = await functionToCall(tool.function.arguments);
+                            // Add function response to the conversation
+                            messages_.push({
+                                role: 'tool',
+                                content: functionResponse,
+                            });
+
+                            console.log(`Function answer: ${functionResponse}`);
+                        }
+                        // Second API call: Get final response from the model
+                    }
+
+                }
+            } catch (error) {
+                console.error(`Request failed: ${error.message}`);
+            }
+        }
+        // CSV dosyasını yükle ve veritabanına ekle
+        async function uploadCSV() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert('Lütfen bir CSV dosyası seçin.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function (e) {
+                const text = e.target.result;
+                const rows = text.split('\n').slice(1); // Başlık satırını atla
+                for (const row of rows) {
+
+                    if (row.trim() === '') continue; // Boş satırları atla
+                    const [grade, de, en, tr, article] = row.split(',');
+                    if (grade === "grade") continue; // Başlık satırını atla
+
+                    const newWord = {
+                        de: de,
+                        en: en,
+                        tr: tr,
+                        article: article.replace("\r", ''),
+                        gender: "",
+                        grade: grade,
+                        example: "",
+
+                    };
+                    await sendWord(newWord);
+
+                }
+            };
+            reader.readAsText(file);
+            await listWords(1000);
+        }
+    </script>
+    <script src="models/functions.js"></script>
+
+</body>
 
 </html>
